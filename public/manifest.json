@@ -1,0 +1,7 @@
+{
+  "name": "Pixelize!",
+  "description": "Pixelize your images",
+  "code": "/plugin.js",
+  "icon": "/icon.png",
+  "permissions": ["content:read", "content:write"]
+}
