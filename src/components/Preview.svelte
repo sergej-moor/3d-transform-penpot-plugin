@@ -5,7 +5,7 @@
     updatePreview,
     setPreviewCanvas,
   } from '../stores/selection';
-  import { settings } from '../stores/settings';
+  import { settings, setCanvas } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
   import LoadingSpinner from './LoadingSpinner.svelte';
   import { initWebGL, drawScene, drawPlaceholder } from '../utils/webgl';
@@ -83,6 +83,10 @@
     if (state.isPreviewLoading) return LOADING_MESSAGES.PREVIEW;
     if (state.isPixelizing) return LOADING_MESSAGES.PIXELIZING;
     return LOADING_MESSAGES.UPLOADING;
+  }
+
+  $: if (canvasElement) {
+    setCanvas(canvasElement);
   }
 </script>
 
