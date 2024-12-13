@@ -204,6 +204,29 @@ async function handlePluginMessage(message: PluginMessage): Promise<void> {
     case 'delete-top-layer':
       deleteTopLayer(selection);
       break;
+    case 'add-to-penpot': {
+      const blockId = penpot.history.undoBlockBegin();
+      try {
+        const image = await penpot.uploadMediaData(
+          'transformed-image',
+          message.imageData,
+          'image/png'
+        );
+
+        if (image) {
+          const rect = penpot.createRectangle();
+          rect.x = penpot.viewport.center.x;
+          rect.y = penpot.viewport.center.y;
+          rect.resize(message.width, message.height);
+          rect.fills = [{ fillOpacity: 1, fillImage: image }];
+
+          sendMessage({ type: 'fill-upload-complete' });
+        }
+      } finally {
+        penpot.history.undoBlockFinish(blockId);
+      }
+      break;
+    }
     default:
       console.warn(`Unhandled message type: ${message.type}`);
   }

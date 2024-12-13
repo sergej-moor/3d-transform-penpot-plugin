@@ -73,4 +73,11 @@ export type PluginMessage =
     }
   | { type: 'fill-upload-complete' }
   | { type: 'delete-top-layer' }
-  | { type: 'export-error'; error: string };
+  | { type: 'export-error'; error: string }
+  | {
+      type: 'add-to-penpot';
+      imageData: Uint8Array;
+      width: number;
+      height: number;
+      originalFill: Fill;
+    };

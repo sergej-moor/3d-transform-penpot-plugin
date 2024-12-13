@@ -131,11 +131,11 @@
       // Send message to create new layer
       window.parent.postMessage(
         {
-          type: 'update-image-fill',
+          type: 'add-to-penpot',
           imageData: finalImageData,
-          addNewLayer: true,
+          width: finalWidth / 2, // Using the scaled dimensions
+          height: finalHeight / 2,
           originalFill: $selection.fills[$selection.fills.length - 1],
-          shouldDeleteFirst: false,
         },
         '*'
       );
