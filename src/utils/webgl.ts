@@ -322,13 +322,13 @@ export function drawScene(
   // Convert number[] to proper RGBA Uint8Array
   const data = new Uint8Array(imageData);
 
-  console.log('Drawing with data:', {
+  /*   console.log('Drawing with data:', {
     dataLength: data.length,
     expectedLength: width * height * 4,
     width,
     height,
     sample: Array.from(data.slice(0, 16)), // Look at first few pixels
-  });
+  }); */
 
   // Make sure we're using the right format
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);

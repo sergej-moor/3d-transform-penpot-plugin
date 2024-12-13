@@ -16,12 +16,12 @@
 
   // Watch for selection or rotation changes
   $: if (gl && program) {
-    console.log('Selection state:', {
+    /*     console.log('Selection state:', {
       hasPreviewImage: !!$selection.previewImage,
       previewData: $selection.previewImage?.data?.length,
       width: $selection.previewImage?.width,
       height: $selection.previewImage?.height,
-    });
+    }); */
     if ($selection.previewImage) {
       drawScene(
         gl,

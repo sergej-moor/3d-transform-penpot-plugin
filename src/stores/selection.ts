@@ -288,13 +288,13 @@ export function handleLoadedImage(
       rgbaData[i + 3] = imageData.data[i + 3]; // A
     }
 
-    console.log('Image data loaded:', {
+    /*     console.log('Image data loaded:', {
       width,
       height,
       dataLength: rgbaData.length,
       expectedLength: width * height * 4,
       samplePixels: Array.from(rgbaData.slice(0, 16)),
-    });
+    }); */
 
     // Store the actual pixel data
     selection.update((state) => ({
