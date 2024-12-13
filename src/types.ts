@@ -49,6 +49,7 @@ export interface SelectionState {
     height: number;
   };
   isTransforming: boolean;
+  canvas: HTMLCanvasElement | null;
 }
 
 // Message Types

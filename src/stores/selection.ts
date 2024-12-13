@@ -15,6 +15,7 @@ const initialState: SelectionState = {
   pixelSize: 1,
   error: undefined,
   isTransforming: false,
+  canvas: null,
 };
 
 export const selection = writable<SelectionState>(initialState);
@@ -322,4 +323,24 @@ export function handleLoadedImage(
   };
 
   img.src = url;
+}
+
+export function setPreviewContext(
+  canvas: HTMLCanvasElement | null,
+  gl: WebGLRenderingContext | null = null,
+  program: WebGLProgram | null = null
+): void {
+  selection.update((state) => ({
+    ...state,
+    canvas,
+    gl,
+    program,
+  }));
+}
+
+export function setPreviewCanvas(canvas: HTMLCanvasElement | null): void {
+  selection.update((state) => ({
+    ...state,
+    canvas,
+  }));
 }

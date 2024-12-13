@@ -1,12 +1,16 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { selection, updatePreview } from '../stores/selection';
+  import {
+    selection,
+    updatePreview,
+    setPreviewCanvas,
+  } from '../stores/selection';
   import { settings } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
   import LoadingSpinner from './LoadingSpinner.svelte';
   import { initWebGL, drawScene, drawPlaceholder } from '../utils/webgl';
 
-  let canvas: HTMLCanvasElement;
+  let canvasElement: HTMLCanvasElement;
   let gl: WebGLRenderingContext | null = null;
   let program: WebGLProgram | null = null;
 
@@ -16,12 +20,6 @@
 
   // Watch for selection or rotation changes
   $: if (gl && program) {
-    /*     console.log('Selection state:', {
-      hasPreviewImage: !!$selection.previewImage,
-      previewData: $selection.previewImage?.data?.length,
-      width: $selection.previewImage?.width,
-      height: $selection.previewImage?.height,
-    }); */
     if ($selection.previewImage) {
       drawScene(
         gl,
@@ -45,9 +43,9 @@
   }
 
   onMount(async () => {
-    if (!canvas) return;
+    if (!canvasElement) return;
 
-    const result = initWebGL(canvas);
+    const result = initWebGL(canvasElement);
     if (!result) {
       console.error('Failed to initialize WebGL');
       return;
@@ -55,6 +53,7 @@
 
     gl = result.gl;
     program = result.program;
+    setPreviewCanvas(canvasElement);
 
     // Initial draw
     if (!$selection.previewImage) {
@@ -71,6 +70,7 @@
   onDestroy(() => {
     if (gl && program) {
       gl.deleteProgram(program);
+      setPreviewCanvas(null);
     }
   });
 
@@ -95,7 +95,7 @@
     {:else}
       <div class="flex items-center justify-center relative w-full h-full">
         <canvas
-          bind:this={canvas}
+          bind:this={canvasElement}
           width="300"
           height="300"
           class="w-[300px] h-[300px] max-w-full max-h-[300px] p-2 object-contain rounded transition-opacity"
