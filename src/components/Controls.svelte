@@ -35,12 +35,8 @@
         $selection.previewImage.height * cosZ;
 
       // Calculate export dimensions with high resolution
-      const exportWidth = Math.round(
-        Math.max($selection.previewImage.width, rotatedWidth)
-      );
-      const exportHeight = Math.round(
-        Math.max($selection.previewImage.height, rotatedHeight)
-      );
+      const exportWidth = Math.round(rotatedWidth);
+      const exportHeight = Math.round(rotatedHeight);
 
       // Apply resolution multiplier with maximum dimension limit
       const maxDimension = 4096;
@@ -51,10 +47,11 @@
         4
       );
 
-      const finalWidth = Math.round(exportWidth * scale);
-      const finalHeight = Math.round(exportHeight * scale);
+      // Calculate final dimensions while maintaining aspect ratio
+      const finalWidth = Math.round(rotatedWidth * scale);
+      const finalHeight = Math.round(rotatedHeight * scale);
 
-      // Resize WebGL canvas and viewport
+      // Set canvas size and viewport
       $settings.canvas.width = finalWidth;
       $settings.canvas.height = finalHeight;
       gl.viewport(0, 0, finalWidth, finalHeight);
