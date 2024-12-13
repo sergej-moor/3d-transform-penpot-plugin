@@ -276,19 +276,36 @@ export function handleLoadedImage(
     }
 
     // Draw the image to get pixel data
-    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, 0, 0, width, height);
     const imageData = ctx.getImageData(0, 0, width, height);
+
+    // Create a properly sized RGBA array
+    const rgbaData = new Uint8Array(width * height * 4);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      rgbaData[i] = imageData.data[i]; // R
+      rgbaData[i + 1] = imageData.data[i + 1]; // G
+      rgbaData[i + 2] = imageData.data[i + 2]; // B
+      rgbaData[i + 3] = imageData.data[i + 3]; // A
+    }
+
+    console.log('Image data loaded:', {
+      width,
+      height,
+      dataLength: rgbaData.length,
+      expectedLength: width * height * 4,
+      samplePixels: Array.from(rgbaData.slice(0, 16)),
+    });
 
     // Store the actual pixel data
     selection.update((state) => ({
       ...state,
       originalImage: {
-        data: Array.from(imageData.data),
+        data: Array.from(rgbaData),
         width,
         height,
       },
       previewImage: {
-        data: Array.from(imageData.data),
+        data: Array.from(rgbaData),
         width,
         height,
       },
@@ -299,8 +316,8 @@ export function handleLoadedImage(
     URL.revokeObjectURL(url);
   };
 
-  img.onerror = () => {
-    console.error('Failed to load image data');
+  img.onerror = (error) => {
+    console.error('Failed to load image data:', error);
     URL.revokeObjectURL(url);
   };
 
