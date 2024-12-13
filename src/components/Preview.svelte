@@ -1,27 +1,80 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { selection } from '../stores/selection';
+  import { settings } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
-  import { createImageUrl, revokeImageUrl } from '../utils/imageUrl';
   import LoadingSpinner from './LoadingSpinner.svelte';
+  import { initWebGL, drawScene, drawPlaceholder } from '../utils/webgl';
 
-  let previewUrl: string | undefined;
-
-  $: {
-    const imageData =
-      $selection.previewImage?.data || $selection.exportedImage?.data;
-    revokeImageUrl(previewUrl);
-    previewUrl = imageData ? createImageUrl(imageData) : undefined;
-  }
+  let canvas: HTMLCanvasElement;
+  let gl: WebGLRenderingContext | null = null;
+  let program: WebGLProgram | null = null;
 
   // Computed properties
   $: displayName = formatDisplayName($selection.name);
   $: loadingMessage = getLoadingMessage($selection);
 
-  // Cleanup on destroy
-  onDestroy((): void => revokeImageUrl(previewUrl));
+  onMount(async () => {
+    if (!canvas) return;
 
-  // Helper functions
+    const result = initWebGL(canvas);
+    if (!result) {
+      console.error('Failed to initialize WebGL');
+      return;
+    }
+
+    gl = result.gl;
+    program = result.program;
+
+    // Draw placeholder if no selection
+    if (!$selection.previewImage) {
+      await drawPlaceholder(gl, program);
+    } else {
+      updatePreview($selection.previewImage);
+    }
+  });
+
+  // Subscribe to selection changes and rotation settings
+  $: if (gl && program) {
+    if ($selection.previewImage) {
+      updatePreview($selection.previewImage);
+    } else {
+      drawPlaceholder(
+        gl,
+        program,
+        $settings.rotateX,
+        $settings.rotateY,
+        $settings.rotateZ
+      ).catch(console.error);
+    }
+  }
+
+  function updatePreview(previewImage: {
+    data: number[];
+    width: number;
+    height: number;
+  }) {
+    if (!gl || !program) return;
+
+    try {
+      drawScene(
+        gl,
+        program,
+        previewImage.data,
+        previewImage.width,
+        previewImage.height
+      );
+    } catch (error) {
+      console.error('Failed to update preview:', error);
+    }
+  }
+
+  onDestroy(() => {
+    if (gl && program) {
+      gl.deleteProgram(program);
+    }
+  });
+
   function formatDisplayName(name?: string): string {
     if (!name) return 'No selection';
     return name.length > 28 ? `${name.slice(0, 25)}...` : name;
@@ -40,17 +93,16 @@
       <div class="flex items-center justify-center h-full p-4">
         <p class="text-sm text-red-600 text-center">{$selection.error}</p>
       </div>
-    {:else if previewUrl}
-      <!-- Preview Image -->
+    {:else}
       <div class="flex items-center justify-center relative w-full h-full">
-        <img
-          src={previewUrl}
-          alt="Selected shape"
+        <canvas
+          bind:this={canvas}
+          width="300"
+          height="300"
           class="w-[300px] h-[300px] max-w-full max-h-[300px] p-2 object-contain rounded transition-opacity"
           class:opacity-50={$selection.isPreviewLoading}
-        />
+        ></canvas>
 
-        <!-- Loading Overlay -->
         {#if $selection.isPreviewLoading || $selection.isPixelizing || $selection.isUploadingFill}
           <div
             class="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded transition-all duration-200"
@@ -59,19 +111,20 @@
             <p class="text-sm text-white font-medium">{loadingMessage}</p>
           </div>
         {/if}
-      </div>
-    {:else}
-      <!-- Initial State -->
-      <div class="flex items-center justify-center w-full h-full">
-        <div class="text-sm text-center">
-          {#if $selection.name}
-            <LoadingSpinner />
-            {LOADING_MESSAGES.INITIAL}
-            <p>{displayName}</p>
-          {:else}
-            {LOADING_MESSAGES.NO_SELECTION}
-          {/if}
-        </div>
+        {#if !$selection.previewImage}
+          <div
+            class="absolute inset-0 flex flex-col items-center justify-center"
+          >
+            <p class="text-sm text-center">
+              {$selection.name
+                ? LOADING_MESSAGES.INITIAL
+                : LOADING_MESSAGES.NO_SELECTION}
+            </p>
+            {#if $selection.name}
+              <p>{displayName}</p>
+            {/if}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>

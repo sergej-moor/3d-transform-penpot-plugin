@@ -37,6 +37,7 @@
     "@penpot/plugin-styles": "^1.0.0",
     "@penpot/plugin-types": "^1.0.0",
     "@types/node": "^22.9.1",
+    "gl-matrix": "^3.4.3",
     "lucide-svelte": "^0.468.0"
   }
 }

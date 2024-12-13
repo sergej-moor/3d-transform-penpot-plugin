@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import type { Fill } from '@penpot/plugin-types';
 import { processImage } from '../utils/imageProcessing';
 import type { SelectionState } from '../types';
+import { transformImageData } from '../utils/webgl';
 
 const initialState: SelectionState = {
   id: '',
@@ -13,6 +14,7 @@ const initialState: SelectionState = {
   isPreviewLoading: false,
   pixelSize: 1,
   error: undefined,
+  isTransforming: false,
 };
 
 export const selection = writable<SelectionState>(initialState);
@@ -39,27 +41,32 @@ export function updateSelection(
   }));
 }
 
-export async function updatePreview(pixelSize: number): Promise<void> {
+export async function updatePreview(rotation: {
+  rotateX: number;
+  rotateY: number;
+  rotateZ: number;
+}): Promise<void> {
   const state = get(selection);
   if (!state.originalImage || !state.name || !state.fills || !state.id) return;
   const currentId = state.id;
 
   try {
-    // Clear any existing preview data before starting new preview
     selection.update((state) => ({
       ...state,
       isPreviewLoading: true,
-      previewImage: undefined, // Clear existing preview
+      previewImage: undefined,
     }));
 
-    const processed = await processImage(
+    const transformed = await transformImageData(
       new Uint8Array(state.originalImage.data),
       state.originalImage.width,
       state.originalImage.height,
-      pixelSize
+      rotation.rotateX,
+      rotation.rotateY,
+      rotation.rotateZ
     );
 
-    // Check if we still have the same selection
+    // Check if selection is still valid
     const currentState = get(selection);
     if (
       !currentState.name ||
@@ -71,12 +78,11 @@ export async function updatePreview(pixelSize: number): Promise<void> {
 
     selection.update((state) => ({
       ...state,
-      pixelSize,
       isPreviewLoading: false,
       previewImage: {
-        width: state.originalImage!.width,
-        height: state.originalImage!.height,
-        data: Array.from(processed.data),
+        width: transformed.width,
+        height: transformed.height,
+        data: Array.from(transformed.data),
       },
     }));
   } catch (error) {
@@ -84,8 +90,62 @@ export async function updatePreview(pixelSize: number): Promise<void> {
     selection.update((state) => ({
       ...state,
       isPreviewLoading: false,
-      previewImage: undefined, // Clear preview on error
+      previewImage: undefined,
     }));
+  }
+}
+
+export async function transformImage(
+  rotation: { rotateX: number; rotateY: number; rotateZ: number },
+  addNewLayer: boolean
+): Promise<void> {
+  const state = get(selection);
+  if (!state.originalImage || !state.fills?.length || !state.name) return;
+
+  try {
+    selection.update((state) => ({ ...state, isTransforming: true }));
+
+    const transformed = await transformImageData(
+      new Uint8Array(state.originalImage.data),
+      state.originalImage.width,
+      state.originalImage.height,
+      rotation.rotateX,
+      rotation.rotateY,
+      rotation.rotateZ
+    );
+
+    // Check if we still have a selection
+    const currentState = get(selection);
+    if (!currentState.name || !currentState.fills) {
+      return;
+    }
+
+    selection.update((state) => ({ ...state, isUploadingFill: true }));
+
+    window.parent.postMessage(
+      {
+        type: 'update-image-fill',
+        imageData: transformed.data,
+        fillIndex: 0,
+        originalFill: state.fills[state.fills.length - 1],
+        shouldDeleteFirst: !addNewLayer && state.fills.length >= 2,
+        addNewLayer,
+      },
+      '*'
+    );
+
+    selection.update((state) => ({
+      ...state,
+      isTransforming: false,
+      exportedImage: {
+        width: transformed.width,
+        height: transformed.height,
+        data: Array.from(transformed.data),
+      },
+    }));
+  } catch (error) {
+    console.error('Failed to transform image:', error);
+    selection.update((state) => ({ ...state, isTransforming: false }));
   }
 }
 

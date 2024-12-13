@@ -6,7 +6,7 @@ export const CONSTANTS = {
 
 export const LOADING_MESSAGES = {
   PREVIEW: 'Updating preview...',
-  PIXELIZING: 'Pixelizing image...',
+  TRANSFORMING: 'Applying 3D transform...',
   UPLOADING: 'Uploading fill...',
   INITIAL: 'Exporting as an image:',
   NO_SELECTION: 'Select something to start',

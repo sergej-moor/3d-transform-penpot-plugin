@@ -2,9 +2,10 @@ import type { Fill } from '@penpot/plugin-types';
 
 // Data Types
 export interface ImageData {
-  data: Uint8Array;
+  data: string;
   width: number;
   height: number;
+  mtype: string;
 }
 
 // Plugin Configuration Types
@@ -47,6 +48,7 @@ export interface SelectionState {
     width: number;
     height: number;
   };
+  isTransforming: boolean;
 }
 
 // Message Types

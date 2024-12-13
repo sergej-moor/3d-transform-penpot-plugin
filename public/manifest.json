@@ -1,6 +1,6 @@
 {
-  "name": "Pixelize!",
-  "description": "Pixelize your images",
+  "name": "3D Transform",
+  "description": "3D transform your iamges",
   "code": "/plugin.js",
   "icon": "/icon.png",
   "permissions": ["content:read", "content:write"]
