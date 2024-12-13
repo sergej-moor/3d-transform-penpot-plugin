@@ -8,17 +8,6 @@
   import { tooltip } from '../actions/tooltip';
   import { CONSTANTS } from '../constants';
 
-  function handleApplyTransform(): void {
-    transformImage(
-      {
-        rotateX: $settings.rotateX,
-        rotateY: $settings.rotateY,
-        rotateZ: $settings.rotateZ,
-      },
-      false
-    );
-  }
-
   function handleAddNewLayer(): void {
     transformImage(
       {
@@ -31,7 +20,7 @@
   }
 
   // Check if controls should be disabled
-  $: isDisabled = !$selection.exportedImage;
+  $: isDisabled = !$selection.previewImage;
   $: isProcessing =
     $selection.isTransforming ||
     $selection.isUploadingFill ||
@@ -73,20 +62,6 @@
   </label>
 
   <div class="flex flex-col gap-2">
-    <button
-      on:click={handleApplyTransform}
-      disabled={isDisabled || isProcessing}
-      data-appearance="primary"
-      class="flex-1 flex justify-center gap-2 items-center"
-      use:tooltip={{
-        text: 'Apply the 3D transformation to the current shape',
-        position: 'top',
-        maxWidth: 'max-w-[300px]',
-      }}
-    >
-      Apply to shape
-    </button>
-
     <button
       on:click={handleAddNewLayer}
       disabled={isDisabled || isProcessing}
