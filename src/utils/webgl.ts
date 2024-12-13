@@ -246,22 +246,93 @@ export function drawScene(
   program: WebGLProgram,
   imageData: number[],
   width: number,
-  height: number
+  height: number,
+  rotateX = 0,
+  rotateY = 0,
+  rotateZ = 0
 ): void {
   gl.useProgram(program);
+
+  // Calculate scaling to maintain aspect ratio
+  const imageAspect = width / height;
+  const canvasAspect = gl.canvas.width / gl.canvas.height;
+
+  let scaleX = 1;
+  let scaleY = 1;
+
+  if (imageAspect > canvasAspect) {
+    // Image is wider than canvas
+    scaleY = canvasAspect / imageAspect;
+  } else {
+    // Image is taller than canvas
+    scaleX = imageAspect / canvasAspect;
+  }
+
+  // Update vertex positions to maintain aspect ratio
+  const positions = new Float32Array([
+    -scaleX,
+    -scaleY, // Bottom left
+    scaleX,
+    -scaleY, // Bottom right
+    -scaleX,
+    scaleY, // Top left
+    scaleX,
+    scaleY, // Top right
+  ]);
+
+  // Update position buffer
+  const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  // Add texture coordinate buffer setup
+  const textureCoords = new Float32Array([
+    0.0,
+    1.0, // Bottom left
+    1.0,
+    1.0, // Bottom right
+    0.0,
+    0.0, // Top left
+    1.0,
+    0.0, // Top right
+  ]);
+
+  const texCoordBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, textureCoords, gl.STATIC_DRAW);
+  const texCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
+  gl.enableVertexAttribArray(texCoordLocation);
+  gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
 
   // Create and set up the texture
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
-
-  // Set texture parameters
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-  // Convert number[] to Uint8Array and upload to texture
+  // Bind texture to texture unit 0
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  const samplerLocation = gl.getUniformLocation(program, 'uSampler');
+  gl.uniform1i(samplerLocation, 0);
+
+  // Convert number[] to proper RGBA Uint8Array
   const data = new Uint8Array(imageData);
+
+  console.log('Drawing with data:', {
+    dataLength: data.length,
+    expectedLength: width * height * 4,
+    width,
+    height,
+    sample: Array.from(data.slice(0, 16)), // Look at first few pixels
+  });
+
+  // Make sure we're using the right format
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -274,11 +345,29 @@ export function drawScene(
     data
   );
 
+  // Create and set transformation matrices
+  const { modelViewMatrix, projectionMatrix } = createMatrices(
+    gl,
+    rotateX,
+    rotateY,
+    rotateZ
+  );
+
+  const modelViewLocation = gl.getUniformLocation(program, 'uModelViewMatrix');
+  const projectionLocation = gl.getUniformLocation(
+    program,
+    'uProjectionMatrix'
+  );
+
+  gl.uniformMatrix4fv(modelViewLocation, false, modelViewMatrix);
+  gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
+
+  // Enable depth test for 3D
+  gl.enable(gl.DEPTH_TEST);
+
   // Clear and draw
   gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // Draw the textured quad
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 

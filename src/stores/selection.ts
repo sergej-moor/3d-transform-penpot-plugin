@@ -34,10 +34,6 @@ export function updateSelection(
     id: shapes.id,
     name: shapes.name,
     fills: shapes.fills,
-    // Clear all image data
-    originalImage: undefined,
-    exportedImage: undefined,
-    previewImage: undefined,
   }));
 }
 
@@ -48,7 +44,6 @@ export async function updatePreview(rotation: {
 }): Promise<void> {
   const state = get(selection);
   if (!state.originalImage || !state.name || !state.fills || !state.id) return;
-  const currentId = state.id;
 
   try {
     selection.update((state) => ({
@@ -65,16 +60,6 @@ export async function updatePreview(rotation: {
       rotation.rotateY,
       rotation.rotateZ
     );
-
-    // Check if selection is still valid
-    const currentState = get(selection);
-    if (
-      !currentState.name ||
-      !currentState.fills ||
-      currentState.id !== currentId
-    ) {
-      return;
-    }
 
     selection.update((state) => ({
       ...state,
@@ -265,4 +250,59 @@ export function setLoading(isLoading: boolean): void {
       isLoading,
     };
   });
+}
+
+export function handleLoadedImage(
+  imageData: Uint8Array,
+  width: number,
+  height: number
+): void {
+  // Create a blob from the image data
+  const blob = new Blob([imageData], { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+
+  // Load the image
+  const img = new Image();
+  img.onload = () => {
+    // Create a canvas to extract the pixel data
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      console.error('Failed to get 2D context');
+      return;
+    }
+
+    // Draw the image to get pixel data
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, width, height);
+
+    // Store the actual pixel data
+    selection.update((state) => ({
+      ...state,
+      originalImage: {
+        data: Array.from(imageData.data),
+        width,
+        height,
+      },
+      previewImage: {
+        data: Array.from(imageData.data),
+        width,
+        height,
+      },
+      isLoading: false,
+    }));
+
+    // Clean up
+    URL.revokeObjectURL(url);
+  };
+
+  img.onerror = () => {
+    console.error('Failed to load image data');
+    URL.revokeObjectURL(url);
+  };
+
+  img.src = url;
 }

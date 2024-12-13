@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { selection } from '../stores/selection';
+  import { selection, updatePreview } from '../stores/selection';
   import { settings } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
   import LoadingSpinner from './LoadingSpinner.svelte';
@@ -14,6 +14,36 @@
   $: displayName = formatDisplayName($selection.name);
   $: loadingMessage = getLoadingMessage($selection);
 
+  // Watch for selection or rotation changes
+  $: if (gl && program) {
+    console.log('Selection state:', {
+      hasPreviewImage: !!$selection.previewImage,
+      previewData: $selection.previewImage?.data?.length,
+      width: $selection.previewImage?.width,
+      height: $selection.previewImage?.height,
+    });
+    if ($selection.previewImage) {
+      drawScene(
+        gl,
+        program,
+        $selection.previewImage.data,
+        $selection.previewImage.width,
+        $selection.previewImage.height,
+        $settings.rotateX,
+        $settings.rotateY,
+        $settings.rotateZ
+      );
+    } else {
+      drawPlaceholder(
+        gl,
+        program,
+        $settings.rotateX,
+        $settings.rotateY,
+        $settings.rotateZ
+      ).catch(console.error);
+    }
+  }
+
   onMount(async () => {
     if (!canvas) return;
 
@@ -26,48 +56,17 @@
     gl = result.gl;
     program = result.program;
 
-    // Draw placeholder if no selection
+    // Initial draw
     if (!$selection.previewImage) {
-      await drawPlaceholder(gl, program);
-    } else {
-      updatePreview($selection.previewImage);
-    }
-  });
-
-  // Subscribe to selection changes and rotation settings
-  $: if (gl && program) {
-    if ($selection.previewImage) {
-      updatePreview($selection.previewImage);
-    } else {
-      drawPlaceholder(
+      await drawPlaceholder(
         gl,
         program,
         $settings.rotateX,
         $settings.rotateY,
         $settings.rotateZ
-      ).catch(console.error);
-    }
-  }
-
-  function updatePreview(previewImage: {
-    data: number[];
-    width: number;
-    height: number;
-  }) {
-    if (!gl || !program) return;
-
-    try {
-      drawScene(
-        gl,
-        program,
-        previewImage.data,
-        previewImage.width,
-        previewImage.height
       );
-    } catch (error) {
-      console.error('Failed to update preview:', error);
     }
-  }
+  });
 
   onDestroy(() => {
     if (gl && program) {

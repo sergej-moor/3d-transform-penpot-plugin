@@ -9,11 +9,25 @@
   import { CONSTANTS } from '../constants';
 
   function handleApplyTransform(): void {
-    transformImage({ rotateX, rotateY, rotateZ }, false);
+    transformImage(
+      {
+        rotateX: $settings.rotateX,
+        rotateY: $settings.rotateY,
+        rotateZ: $settings.rotateZ,
+      },
+      false
+    );
   }
 
   function handleAddNewLayer(): void {
-    transformImage({ rotateX, rotateY, rotateZ }, true);
+    transformImage(
+      {
+        rotateX: $settings.rotateX,
+        rotateY: $settings.rotateY,
+        rotateZ: $settings.rotateZ,
+      },
+      true
+    );
   }
 
   // Check if controls should be disabled

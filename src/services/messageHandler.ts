@@ -6,6 +6,7 @@ import {
   updateExportedImage,
   setUploadingFill,
   setLoading,
+  handleLoadedImage,
 } from '../stores/selection';
 import { selection } from '../stores/selection';
 import type { SelectionState } from '../types';
@@ -35,12 +36,7 @@ export class MessageHandler {
           break;
 
         case 'selection-loaded':
-          updateExportedImage(
-            Array.from(message.imageData),
-            message.width,
-            message.height,
-            message.selectionId
-          );
+          handleLoadedImage(message.imageData, message.width, message.height);
           break;
 
         case 'fill-upload-complete':
