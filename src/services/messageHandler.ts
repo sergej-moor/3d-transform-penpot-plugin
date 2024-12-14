@@ -3,7 +3,6 @@ import type { PluginMessage } from '../types';
 import { updateTheme } from '../stores/theme';
 import {
   updateSelection,
-  updateExportedImage,
   setUploadingFill,
   setLoading,
   handleLoadedImage,

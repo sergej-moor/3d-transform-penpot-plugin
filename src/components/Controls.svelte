@@ -1,10 +1,6 @@
 <script lang="ts">
   import { settings } from '../stores/settings';
-  import {
-    selection,
-    updatePreview,
-    transformImage,
-  } from '../stores/selection';
+  import { selection } from '../stores/selection';
   import { tooltip } from '../actions/tooltip';
   import { CONSTANTS } from '../constants';
   import { drawScene } from '../utils/webgl';

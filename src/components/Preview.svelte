@@ -1,10 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import {
-    selection,
-    updatePreview,
-    setPreviewCanvas,
-  } from '../stores/selection';
+  import { selection } from '../stores/selection';
   import { settings, setCanvas, setWebGLContext } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
   import LoadingSpinner from './LoadingSpinner.svelte';
@@ -54,7 +50,6 @@
     gl = result.gl;
     program = result.program;
     setWebGLContext(canvasElement, program);
-    setPreviewCanvas(canvasElement);
 
     // Initial draw
     if (!$selection.previewImage) {
@@ -71,7 +66,6 @@
   onDestroy(() => {
     if (gl && program) {
       gl.deleteProgram(program);
-      setPreviewCanvas(null);
     }
   });
 
@@ -82,7 +76,7 @@
 
   function getLoadingMessage(state: typeof $selection): string {
     if (state.isPreviewLoading) return LOADING_MESSAGES.PREVIEW;
-    if (state.isPixelizing) return LOADING_MESSAGES.PIXELIZING;
+    if (state.isPixelizing) return 'arbeitet';
     return LOADING_MESSAGES.UPLOADING;
   }
 

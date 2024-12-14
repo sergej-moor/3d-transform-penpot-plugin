@@ -17,7 +17,7 @@
   <h2
     class=" text-center mb-2 font-GamjaFlower tracking-widest hover:tracking-[0.7rem] transition-all duration-700 font-bold"
   >
-    Pixelize!
+    3D Transform
   </h2>
   <div class="flex flex-col gap-4">
     <!-- Wrap Preview with its own error boundary -->
