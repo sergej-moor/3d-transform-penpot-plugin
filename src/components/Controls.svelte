@@ -25,14 +25,21 @@
       const radY = ($settings.rotateY * Math.PI) / 180;
       const radZ = ($settings.rotateZ * Math.PI) / 180;
 
+      // Calculate Z rotation effect
       const cosZ = Math.abs(Math.cos(radZ));
       const sinZ = Math.abs(Math.sin(radZ));
+
+      // Calculate X rotation effect
+      const cosX = Math.abs(Math.cos(radX));
+
+      // Calculate rotated dimensions including X rotation perspective
       const rotatedWidth =
         $selection.previewImage.width * cosZ +
         $selection.previewImage.height * sinZ;
       const rotatedHeight =
-        $selection.previewImage.width * sinZ +
-        $selection.previewImage.height * cosZ;
+        ($selection.previewImage.width * sinZ +
+          $selection.previewImage.height * cosZ) *
+        cosX;
 
       // Calculate export dimensions with high resolution
       const exportWidth = Math.round(rotatedWidth);
@@ -59,7 +66,7 @@
       // Redraw scene at high resolution
       drawScene(
         gl,
-        gl.getParameter(gl.CURRENT_PROGRAM),
+        $settings.program!,
         $selection.previewImage.data,
         $selection.previewImage.width,
         $selection.previewImage.height,
@@ -80,20 +87,19 @@
         pixels
       );
 
-      // Create canvas for final export
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = finalWidth / 2;
-      exportCanvas.height = finalHeight / 2;
-      const ctx = exportCanvas.getContext('2d');
-      if (!ctx) return;
+      // Find bounds of non-transparent pixels
+      const bounds = findImageBounds(
+        pixels,
+        finalWidth,
+        finalHeight,
+        $settings.rotateX
+      );
 
-      // Create temporary canvas for full-size image
+      // Create temporary canvas for Y-axis flip
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = finalWidth;
       tempCanvas.height = finalHeight;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) return;
-
+      const tempCtx = tempCanvas.getContext('2d')!;
       const imageData = tempCtx.createImageData(finalWidth, finalHeight);
 
       // Flip Y-axis and copy pixels
@@ -101,21 +107,37 @@
         for (let x = 0; x < finalWidth; x++) {
           const srcIndex = ((finalHeight - y - 1) * finalWidth + x) * 4;
           const dstIndex = (y * finalWidth + x) * 4;
-          imageData.data[dstIndex] = pixels[srcIndex]; // R
-          imageData.data[dstIndex + 1] = pixels[srcIndex + 1]; // G
-          imageData.data[dstIndex + 2] = pixels[srcIndex + 2]; // B
-          imageData.data[dstIndex + 3] = pixels[srcIndex + 3]; // A
+          imageData.data[dstIndex] = pixels[srcIndex];
+          imageData.data[dstIndex + 1] = pixels[srcIndex + 1];
+          imageData.data[dstIndex + 2] = pixels[srcIndex + 2];
+          imageData.data[dstIndex + 3] = pixels[srcIndex + 3];
         }
       }
 
       tempCtx.putImageData(imageData, 0, 0);
 
-      // Scale down with smoothing
+      // Create canvas for final export with cropped dimensions
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = bounds.width / 2;
+      exportCanvas.height = bounds.height / 2;
+      const ctx = exportCanvas.getContext('2d')!;
+
+      // Draw the cropped region with smooth scaling
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(tempCanvas, 0, 0, finalWidth / 2, finalHeight / 2);
+      ctx.drawImage(
+        tempCanvas,
+        bounds.left,
+        bounds.top,
+        bounds.width,
+        bounds.height, // Source rectangle
+        0,
+        0,
+        bounds.width / 2,
+        bounds.height / 2 // Destination rectangle (scaled down)
+      );
 
-      // Get final image data and send to Penpot
+      // Get final image data
       const blob = await new Promise<Blob | null>((resolve) =>
         exportCanvas.toBlob(resolve, 'image/png')
       );
@@ -125,25 +147,25 @@
       const arrayBuffer = await blob.arrayBuffer();
       const finalImageData = new Uint8Array(arrayBuffer);
 
-      // Send message to create new layer
+      // Send message to create new layer with cropped dimensions
       window.parent.postMessage(
         {
           type: 'add-to-penpot',
           imageData: finalImageData,
-          width: finalWidth / 2, // Using the scaled dimensions
-          height: finalHeight / 2,
+          width: bounds.width / 2,
+          height: bounds.height / 2,
           originalFill: $selection.fills[$selection.fills.length - 1],
         },
         '*'
       );
 
-      // After restoring canvas size, redraw again
+      // Restore preview dimensions
       $settings.canvas.width = previewWidth;
       $settings.canvas.height = previewHeight;
       gl.viewport(0, 0, previewWidth, previewHeight);
       drawScene(
         gl,
-        gl.getParameter(gl.CURRENT_PROGRAM),
+        $settings.program!,
         $selection.previewImage.data,
         $selection.previewImage.width,
         $selection.previewImage.height,
@@ -154,6 +176,76 @@
     } catch (error) {
       console.error('Error exporting image:', error);
     }
+  }
+
+  function findImageBounds(
+    imageData: Uint8Array,
+    width: number,
+    height: number,
+    rotateX: number
+  ) {
+    let left = width;
+    let right = 0;
+    let top = height;
+    let bottom = 0;
+
+    // Calculate X rotation effect
+    const radX = (rotateX * Math.PI) / 180;
+    const cosX = Math.abs(Math.cos(radX));
+    const sinX = Math.abs(Math.sin(radX));
+
+    // Reduce the perspective effect to prevent excessive height reduction
+    const perspectiveScale = Math.min(1, cosX + 0.3);
+
+    // Calculate y-offset based on rotation direction
+    // Use different multipliers for positive and negative rotations
+    const yOffsetMultiplier = rotateX >= 0 ? 0.2 : -0.3; // Increased negative multiplier
+    const yOffset = Math.round(height * sinX * yOffsetMultiplier);
+
+    // Adjust compensation based on rotation angle
+    const compensationBase = Math.abs(rotateX) / 90; // Scale based on rotation angle
+    const compensationOffset =
+      rotateX < 0
+        ? Math.round(height * sinX * (0.4 + compensationBase * 0.2))
+        : 0;
+
+    // Scan through all pixels to find the bounds of non-transparent pixels
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = imageData[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          left = Math.min(left, x);
+          right = Math.max(right, x);
+          // Adjust Y position based on rotation direction and compensation
+          const adjustedY = y - yOffset + compensationOffset;
+          top = Math.min(top, adjustedY);
+          bottom = Math.max(bottom, adjustedY);
+        }
+      }
+    }
+
+    // Add dynamic padding based on rotation
+    const basePadding = 4;
+    const rotationPadding = Math.round(Math.abs(rotateX) / 45) * 2; // Additional padding based on rotation angle
+    const padding = basePadding + rotationPadding;
+
+    left = Math.max(0, left - padding);
+    top = Math.max(0, Math.round(top) - padding);
+    right = Math.min(width - 1, right + padding);
+    bottom = Math.min(height - 1, Math.round(bottom) + padding);
+
+    // Calculate height with less aggressive perspective scaling
+    const rawHeight = bottom - top + 1;
+    const adjustedHeight = Math.round(rawHeight / perspectiveScale);
+
+    return {
+      left,
+      right,
+      top: Math.max(0, top),
+      bottom: Math.min(height - 1, bottom),
+      width: right - left + 1,
+      height: adjustedHeight,
+    };
   }
 
   // Check if controls should be disabled

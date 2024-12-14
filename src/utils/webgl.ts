@@ -299,17 +299,21 @@ export function drawScene(
   const aspectRatio = width / height;
   let scaleX, scaleY;
   if (aspectRatio > 1) {
+    // Image is wider than tall
     scaleX = 0.8;
     scaleY = 0.8 / aspectRatio;
   } else {
+    // Image is taller than wide
     scaleX = 0.8 * aspectRatio;
     scaleY = 0.8;
   }
 
   const model = mat4.create();
+  // Apply rotation first
   mat4.rotateX(model, model, (rotateX * Math.PI) / 180);
   mat4.rotateY(model, model, (rotateY * Math.PI) / 180);
   mat4.rotateZ(model, model, (rotateZ * Math.PI) / 180);
+  // Then apply scaling
   mat4.scale(model, model, [scaleX, scaleY, 1]);
 
   const view = mat4.create();
@@ -382,4 +386,40 @@ function createMatrices(
   mat4.rotateZ(modelViewMatrix, modelViewMatrix, (rotateZ * Math.PI) / 180);
 
   return { modelViewMatrix, projectionMatrix };
+}
+
+function findImageBounds(imageData: Uint8Array, width: number, height: number) {
+  let left = width;
+  let right = 0;
+  let top = height;
+  let bottom = 0;
+
+  // Scan through all pixels to find the bounds of non-transparent pixels
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = imageData[(y * width + x) * 4 + 3];
+      if (alpha > 0) {
+        // If pixel is not fully transparent
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+  }
+
+  // Add a small padding (1px)
+  left = Math.max(0, left - 1);
+  top = Math.max(0, top - 1);
+  right = Math.min(width - 1, right + 1);
+  bottom = Math.min(height - 1, bottom + 1);
+
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    width: right - left + 1,
+    height: bottom - top + 1,
+  };
 }

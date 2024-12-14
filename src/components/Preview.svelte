@@ -5,7 +5,7 @@
     updatePreview,
     setPreviewCanvas,
   } from '../stores/selection';
-  import { settings, setCanvas } from '../stores/settings';
+  import { settings, setCanvas, setWebGLContext } from '../stores/settings';
   import { LOADING_MESSAGES } from '../constants';
   import LoadingSpinner from './LoadingSpinner.svelte';
   import { initWebGL, drawScene, drawPlaceholder } from '../utils/webgl';
@@ -53,6 +53,7 @@
 
     gl = result.gl;
     program = result.program;
+    setWebGLContext(canvasElement, program);
     setPreviewCanvas(canvasElement);
 
     // Initial draw
