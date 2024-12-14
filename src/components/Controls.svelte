@@ -4,6 +4,8 @@
   import { tooltip } from '../actions/tooltip';
   import { CONSTANTS } from '../constants';
   import { drawScene } from '../utils/webgl';
+  import { RotateCcw } from 'lucide-svelte';
+  import { RotateCw } from 'lucide-svelte';
 
   async function handleAddNewLayer(): Promise<void> {
     if (!$selection.previewImage || !$settings.canvas) return;
@@ -160,6 +162,26 @@
     };
   }
 
+  function handleReset(): void {
+    $settings.rotateX = 0;
+    $settings.rotateY = 0;
+    $settings.rotateZ = 0;
+  }
+
+  function rotate(axis: 'x' | 'y' | 'z', amount: number): void {
+    switch (axis) {
+      case 'x':
+        $settings.rotateX = ($settings.rotateX + amount) % 360;
+        break;
+      case 'y':
+        $settings.rotateY = ($settings.rotateY + amount) % 360;
+        break;
+      case 'z':
+        $settings.rotateZ = ($settings.rotateZ + amount) % 360;
+        break;
+    }
+  }
+
   $: isDisabled = !$selection.previewImage;
   $: isProcessing =
     $selection.isTransforming ||
@@ -168,43 +190,181 @@
 </script>
 
 <div class="flex flex-col gap-4">
+  <div class="flex justify-between">
+    <button
+      type="button"
+      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
+      data-appearance="secondary"
+      on:click={() => {
+        $settings.rotateX = -45;
+        $settings.rotateY = 0;
+        $settings.rotateZ = -45;
+      }}
+    >
+      1
+    </button>
+    <button
+      type="button"
+      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
+      data-appearance="secondary"
+      on:click={() => {
+        $settings.rotateX = -45;
+        $settings.rotateY = 0;
+        $settings.rotateZ = 45;
+      }}
+    >
+      2
+    </button>
+    <button
+      type="button"
+      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
+      data-appearance="secondary"
+      on:click={() => {
+        $settings.rotateX = -45;
+        $settings.rotateY = 0;
+        $settings.rotateZ = 0;
+      }}
+    >
+      3
+    </button>
+    <button
+      type="button"
+      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
+      data-appearance="secondary"
+      on:click={() => {
+        $settings.rotateY = 45;
+        $settings.rotateX = 0;
+        $settings.rotateZ = 0;
+      }}
+    >
+      4
+    </button>
+    <button
+      type="button"
+      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
+      data-appearance="secondary"
+      on:click={() => {
+        $settings.rotateY = -45;
+        $settings.rotateX = 0;
+        $settings.rotateZ = 0;
+      }}
+    >
+      5
+    </button>
+  </div>
+
   <label class="flex flex-col">
     <span class="text-sm">Rotate X: {$settings.rotateX}°</span>
-    <input
-      type="range"
-      min="-180"
-      max="180"
-      bind:value={$settings.rotateX}
-      class="w-full"
-    />
+    <div class="flex items-center">
+      <input
+        type="range"
+        min="-180"
+        max="180"
+        bind:value={$settings.rotateX}
+        class="w-full flex-1"
+      />
+      <div class="">
+        <button
+          type="button"
+          class=""
+          data-appearance="secondary"
+          on:click={() => rotate('x', -15)}
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          class="m-2"
+          data-appearance="secondary"
+          on:click={() => rotate('x', 15)}
+        >
+          <RotateCw class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   </label>
 
   <label class="flex flex-col">
     <span class="text-sm">Rotate Y: {$settings.rotateY}°</span>
-    <input
-      type="range"
-      min="-180"
-      max="180"
-      bind:value={$settings.rotateY}
-      class="w-full"
-    />
+    <div class="flex items-center">
+      <input
+        type="range"
+        min="-180"
+        max="180"
+        bind:value={$settings.rotateY}
+        class="w-full flex-1"
+      />
+      <div class="">
+        <button
+          type="button"
+          class=""
+          data-appearance="secondary"
+          on:click={() => rotate('y', -15)}
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          class="m-2"
+          data-appearance="secondary"
+          on:click={() => rotate('y', 15)}
+        >
+          <RotateCw class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   </label>
 
   <label class="flex flex-col">
     <span class="text-sm">Rotate Z: {$settings.rotateZ}°</span>
-    <input
-      type="range"
-      min="-180"
-      max="180"
-      bind:value={$settings.rotateZ}
-      class="w-full"
-    />
+    <div class="flex items-center">
+      <input
+        type="range"
+        min="-180"
+        max="180"
+        bind:value={$settings.rotateZ}
+        class="w-full flex-1"
+      />
+      <div class="">
+        <button
+          type="button"
+          class=""
+          data-appearance="secondary"
+          on:click={() => rotate('z', -15)}
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          class="m-2"
+          data-appearance="secondary"
+          on:click={() => rotate('z', 15)}
+        >
+          <RotateCw class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   </label>
+  <button
+    type="button"
+    data-appearance="secondary"
+    on:click={handleReset}
+    disabled={isDisabled}
+    class="flex-1 flex justify-center gap-2 items-center"
+    use:tooltip={{
+      text: 'Reset all rotation values to 0',
+      position: 'bottom',
+      maxWidth: 'max-w-[300px]',
+    }}
+  >
+    Reset Rotation
+  </button>
 
   <div class="flex flex-col gap-2">
     <button
       on:click={handleAddNewLayer}
       disabled={isDisabled || isProcessing}
+      type="button"
       data-appearance="primary"
       class="flex-1 flex justify-center gap-2 items-center"
       use:tooltip={{
