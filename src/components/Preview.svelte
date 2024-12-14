@@ -27,7 +27,7 @@
         $settings.rotateY,
         $settings.rotateZ
       );
-    } else {
+    } /* else {
       drawPlaceholder(
         gl,
         program,
@@ -35,7 +35,7 @@
         $settings.rotateY,
         $settings.rotateZ
       ).catch(console.error);
-    }
+    } */
   }
 
   onMount(async () => {
@@ -52,7 +52,7 @@
     setWebGLContext(canvasElement, program);
 
     // Initial draw
-    if (!$selection.previewImage) {
+    /*     if (!$selection.previewImage) {
       await drawPlaceholder(
         gl,
         program,
@@ -60,7 +60,7 @@
         $settings.rotateY,
         $settings.rotateZ
       );
-    }
+    } */
   });
 
   onDestroy(() => {
@@ -128,16 +128,17 @@
           >
             <LoadingSpinner />
             <p class="text-sm text-white font-medium">{loadingMessage}</p>
+            {#if $selection.isPreviewLoading}
+              {displayName}
+            {/if}
           </div>
         {/if}
-        {#if !$selection.previewImage}
+        {#if !$selection.previewImage && !$selection.name}
           <div
             class="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded transition-all duration-200"
           >
             <p class="text-sm text-center">
-              {$selection.name
-                ? LOADING_MESSAGES.INITIAL
-                : LOADING_MESSAGES.NO_SELECTION}
+              {LOADING_MESSAGES.NO_SELECTION}
             </p>
           </div>
         {/if}

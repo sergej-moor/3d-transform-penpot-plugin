@@ -14,7 +14,7 @@ import type {
 const PLUGIN_CONFIG = {
   name: 'Pixelize!',
   width: 340,
-  height: 622,
+  height: 922,
 } as const;
 
 // Plugin initialization
