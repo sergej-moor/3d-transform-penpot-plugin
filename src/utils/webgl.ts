@@ -222,6 +222,7 @@ export function drawScene(
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+  console.log('draw scene');
   const positionLocation = gl.getAttribLocation(program, 'a_position');
   const texcoordLocation = gl.getAttribLocation(program, 'a_texcoord');
   const matrixLocation = gl.getUniformLocation(program, 'u_matrix');
