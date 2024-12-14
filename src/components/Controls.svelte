@@ -199,15 +199,8 @@
 
     // Calculate y-offset based on rotation direction
     // Use different multipliers for positive and negative rotations
-    const yOffsetMultiplier = rotateX >= 0 ? 0.2 : -0.3; // Increased negative multiplier
+    const yOffsetMultiplier = rotateX >= 0 ? 0.2 : -0.2; // Increased negative multiplier
     const yOffset = Math.round(height * sinX * yOffsetMultiplier);
-
-    // Adjust compensation based on rotation angle
-    const compensationBase = Math.abs(rotateX) / 90; // Scale based on rotation angle
-    const compensationOffset =
-      rotateX < 0
-        ? Math.round(height * sinX * (0.4 + compensationBase * 0.2))
-        : 0;
 
     // Scan through all pixels to find the bounds of non-transparent pixels
     for (let y = 0; y < height; y++) {
@@ -217,14 +210,14 @@
           left = Math.min(left, x);
           right = Math.max(right, x);
           // Adjust Y position based on rotation direction and compensation
-          const adjustedY = y - yOffset + compensationOffset;
+          const adjustedY = y - yOffset;
           top = Math.min(top, adjustedY);
           bottom = Math.max(bottom, adjustedY);
         }
       }
     }
 
-    // Add dynamic padding based on rotation
+    // Add padding and ensure bounds are within image
     const basePadding = 4;
     const rotationPadding = Math.round(Math.abs(rotateX) / 45) * 2; // Additional padding based on rotation angle
     const padding = basePadding + rotationPadding;
