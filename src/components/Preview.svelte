@@ -83,7 +83,26 @@
   $: if (canvasElement) {
     setCanvas(canvasElement);
   }
+
+  // Add debug state helper
+  function getDebugState($selection: typeof $selection): string {
+    return `
+      isPreviewLoading: ${$selection.isPreviewLoading}
+      isPixelizing: ${$selection.isPixelizing}
+      isUploadingFill: ${$selection.isUploadingFill}
+      hasPreviewImage: ${Boolean($selection.previewImage)}
+      name: ${$selection.name || 'none'}
+    `;
+  }
 </script>
+
+<!-- Add debug state display -->
+
+<div
+  class="p-2 mb-2 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono whitespace-pre"
+>
+  {getDebugState($selection)}
+</div>
 
 <div class="rounded-lg border border-gray-200 dark:border-gray-700">
   <div class="relative w-[300px] h-[300px] min-h-[100px]">
@@ -98,7 +117,9 @@
           width="300"
           height="300"
           class="w-[300px] h-[300px] max-w-full max-h-[300px] p-2 object-contain rounded transition-opacity"
-          class:opacity-50={$selection.isPreviewLoading}
+          class:opacity-50={$selection.isPreviewLoading ||
+            $selection.isPixelizing ||
+            $selection.isUploadingFill}
         ></canvas>
 
         {#if $selection.isPreviewLoading || $selection.isPixelizing || $selection.isUploadingFill}
@@ -111,16 +132,13 @@
         {/if}
         {#if !$selection.previewImage}
           <div
-            class="absolute inset-0 flex flex-col items-center justify-center"
+            class="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded transition-all duration-200"
           >
             <p class="text-sm text-center">
               {$selection.name
                 ? LOADING_MESSAGES.INITIAL
                 : LOADING_MESSAGES.NO_SELECTION}
             </p>
-            {#if $selection.name}
-              <p>{displayName}</p>
-            {/if}
           </div>
         {/if}
       </div>

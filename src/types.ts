@@ -32,6 +32,8 @@ export interface SelectionState {
   isUploadingFill: boolean;
   isPreviewLoading: boolean;
   pixelSize: number;
+  isTransforming: boolean;
+  canvas: HTMLCanvasElement | null;
   error?: string;
   originalImage?: {
     data: number[];
@@ -48,8 +50,6 @@ export interface SelectionState {
     width: number;
     height: number;
   };
-  isTransforming: boolean;
-  canvas: HTMLCanvasElement | null;
 }
 
 // Message Types

@@ -173,6 +173,11 @@ async function handleSelectionChange(): Promise<void> {
     sendMessage({ type: 'selection', content: selectionState });
 
     if (Array.isArray(selection.fills)) {
+      sendMessage({
+        type: 'selection',
+        content: { ...selectionState, isPreviewLoading: true },
+      });
+
       const imageData = await selection.export({ type: 'png', scale: 2 });
       sendMessage({
         type: 'selection-loaded',

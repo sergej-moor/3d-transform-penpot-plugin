@@ -39,7 +39,7 @@ export class MessageHandler {
           break;
 
         case 'fill-upload-complete':
-          setUploadingFill(false);
+          selection.update((state) => ({ ...state, isUploadingFill: false }));
           break;
 
         case 'export-error':

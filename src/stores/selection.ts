@@ -2,7 +2,6 @@ import { writable, get } from 'svelte/store';
 import type { Fill } from '@penpot/plugin-types';
 
 import type { SelectionState } from '../types';
-import { transformImageData } from '../utils/webgl';
 
 const initialState: SelectionState = {
   id: '',
@@ -34,6 +33,7 @@ export function updateSelection(
     id: shapes.id,
     name: shapes.name,
     fills: shapes.fills,
+    isPreviewLoading: Array.isArray(shapes.fills) && shapes.fills.length > 0,
   }));
 }
 
@@ -68,6 +68,9 @@ export function handleLoadedImage(
   width: number,
   height: number
 ): void {
+  // Set preview loading to true at the start
+  selection.update((state) => ({ ...state, isPreviewLoading: true }));
+
   // Create a blob from the image data
   const blob = new Blob([imageData], { type: 'image/png' });
   const url = URL.createObjectURL(blob);
@@ -107,7 +110,7 @@ export function handleLoadedImage(
       samplePixels: Array.from(rgbaData.slice(0, 16)),
     }); */
 
-    // Store the actual pixel data
+    // Update state and set isPreviewLoading to false when done
     selection.update((state) => ({
       ...state,
       originalImage: {
@@ -121,6 +124,7 @@ export function handleLoadedImage(
         height,
       },
       isLoading: false,
+      isPreviewLoading: false,
     }));
 
     // Clean up
@@ -129,6 +133,7 @@ export function handleLoadedImage(
 
   img.onerror = (error) => {
     console.error('Failed to load image data:', error);
+    selection.update((state) => ({ ...state, isPreviewLoading: false }));
     URL.revokeObjectURL(url);
   };
 

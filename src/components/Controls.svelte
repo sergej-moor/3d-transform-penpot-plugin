@@ -8,10 +8,13 @@
   async function handleAddNewLayer(): Promise<void> {
     if (!$selection.previewImage || !$settings.canvas) return;
 
-    const gl = $settings.canvas.getContext('webgl');
-    if (!gl) return;
-
     try {
+      // Set uploading state to true
+      selection.update((state) => ({ ...state, isUploadingFill: true }));
+
+      const gl = $settings.canvas.getContext('webgl');
+      if (!gl) return;
+
       // Store original dimensions
       const previewWidth = $settings.canvas.width;
       const previewHeight = $settings.canvas.height;
@@ -171,6 +174,8 @@
       );
     } catch (error) {
       console.error('Error exporting image:', error);
+      // Reset uploading state on error
+      selection.update((state) => ({ ...state, isUploadingFill: false }));
     }
   }
 

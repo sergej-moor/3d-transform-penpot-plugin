@@ -38,30 +38,15 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export async function transformImageData(
-  imageData: Uint8Array,
-  width: number,
-  height: number,
-  rotateX: number,
-  rotateY: number,
-  rotateZ: number
-): Promise<{ data: Uint8Array; width: number; height: number }> {
-  // For now, just return the original data
-  // We'll implement the actual transformation later
-  return {
-    data: imageData,
-    width,
-    height,
-  };
-}
-
 export function initWebGL(canvas: HTMLCanvasElement): {
   gl: WebGLRenderingContext;
   program: WebGLProgram;
 } | null {
-  const gl =
-    canvas.getContext('webgl', { alpha: true }) ||
-    canvas.getContext('experimental-webgl', { alpha: true });
+  const gl = (canvas.getContext('webgl', { alpha: true }) ||
+    canvas.getContext('experimental-webgl', {
+      alpha: true,
+    })) as WebGLRenderingContext | null;
+
   if (!gl) return null;
 
   const program = createProgram(gl, vsSource, fsSource);
@@ -175,50 +160,6 @@ export async function drawPlaceholder(
   } catch (error) {
     console.error('Failed to load placeholder:', error);
   }
-}
-
-function setupBuffers(gl: WebGLRenderingContext, program: WebGLProgram): void {
-  // Create a square (two triangles) using normalized device coordinates
-  const positions = new Float32Array([
-    -1.0,
-    -1.0, // Bottom left
-    1.0,
-    -1.0, // Bottom right
-    -1.0,
-    1.0, // Top left
-    1.0,
-    1.0, // Top right
-  ]);
-
-  const textureCoords = new Float32Array([
-    0.0,
-    1.0, // Bottom left
-    1.0,
-    1.0, // Bottom right
-    0.0,
-    0.0, // Top left
-    1.0,
-    0.0, // Top right
-  ]);
-
-  // Set up position buffer
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-  const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
-  gl.enableVertexAttribArray(positionLocation);
-  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-  // Set up texture coordinate buffer
-  const texCoordBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, textureCoords, gl.STATIC_DRAW);
-  const texCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
-  gl.enableVertexAttribArray(texCoordLocation);
-  gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-  // Store buffers for later use
-  gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 function createProgram(
@@ -386,40 +327,4 @@ function createMatrices(
   mat4.rotateZ(modelViewMatrix, modelViewMatrix, (rotateZ * Math.PI) / 180);
 
   return { modelViewMatrix, projectionMatrix };
-}
-
-function findImageBounds(imageData: Uint8Array, width: number, height: number) {
-  let left = width;
-  let right = 0;
-  let top = height;
-  let bottom = 0;
-
-  // Scan through all pixels to find the bounds of non-transparent pixels
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const alpha = imageData[(y * width + x) * 4 + 3];
-      if (alpha > 0) {
-        // If pixel is not fully transparent
-        left = Math.min(left, x);
-        right = Math.max(right, x);
-        top = Math.min(top, y);
-        bottom = Math.max(bottom, y);
-      }
-    }
-  }
-
-  // Add a small padding (1px)
-  left = Math.max(0, left - 1);
-  top = Math.max(0, top - 1);
-  right = Math.min(width - 1, right + 1);
-  bottom = Math.min(height - 1, bottom + 1);
-
-  return {
-    left,
-    right,
-    top,
-    bottom,
-    width: right - left + 1,
-    height: bottom - top + 1,
-  };
 }
