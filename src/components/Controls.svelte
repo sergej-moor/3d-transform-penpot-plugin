@@ -450,7 +450,7 @@
         maxWidth: 'max-w-[300px]',
       }}
     >
-      Insert to the Canvas
+      Add to Canvas
     </button>
   </div>
 </div>
