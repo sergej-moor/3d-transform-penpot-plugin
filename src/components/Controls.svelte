@@ -19,9 +19,24 @@
       const previewWidth = $settings.canvas.width;
       const previewHeight = $settings.canvas.height;
 
-      $settings.canvas.width = previewWidth * 2;
-      $settings.canvas.height = previewHeight * 2;
-      gl.viewport(0, 0, previewWidth * 2, previewHeight * 2);
+      const exportScale = 4;
+      const exportWidth = previewWidth * exportScale;
+      const exportHeight = previewHeight * exportScale;
+
+      const maxDimension = 4096 * 3;
+      const resolutionMultiplier = 4;
+      const scale = Math.min(
+        maxDimension / exportWidth,
+        maxDimension / exportHeight,
+        resolutionMultiplier
+      );
+
+      const finalWidth = Math.round(exportWidth * scale);
+      const finalHeight = Math.round(exportHeight * scale);
+
+      $settings.canvas.width = finalWidth;
+      $settings.canvas.height = finalHeight;
+      gl.viewport(0, 0, finalWidth, finalHeight);
 
       drawScene(
         gl,
@@ -34,31 +49,29 @@
         $settings.rotateZ
       );
 
-      const pixels = new Uint8Array(previewWidth * 2 * previewHeight * 2 * 4);
+      const pixels = new Uint8Array(finalWidth * finalHeight * 4);
       gl.readPixels(
         0,
         0,
-        previewWidth * 2,
-        previewHeight * 2,
+        finalWidth,
+        finalHeight,
         gl.RGBA,
         gl.UNSIGNED_BYTE,
         pixels
       );
 
       const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = previewWidth * 2;
-      tempCanvas.height = previewHeight * 2;
+      tempCanvas.width = finalWidth;
+      tempCanvas.height = finalHeight;
       const tempCtx = tempCanvas.getContext('2d')!;
-      const imageData = tempCtx.createImageData(
-        previewWidth * 2,
-        previewHeight * 2
-      );
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = 'high';
+      const imageData = tempCtx.createImageData(finalWidth, finalHeight);
 
-      for (let y = 0; y < previewHeight * 2; y++) {
-        for (let x = 0; x < previewWidth * 2; x++) {
-          const srcIndex =
-            ((previewHeight * 2 - y - 1) * previewWidth * 2 + x) * 4;
-          const dstIndex = (y * previewWidth * 2 + x) * 4;
+      for (let y = 0; y < finalHeight; y++) {
+        for (let x = 0; x < finalWidth; x++) {
+          const srcIndex = ((finalHeight - y - 1) * finalWidth + x) * 4;
+          const dstIndex = (y * finalWidth + x) * 4;
           imageData.data[dstIndex] = pixels[srcIndex];
           imageData.data[dstIndex + 1] = pixels[srcIndex + 1];
           imageData.data[dstIndex + 2] = pixels[srcIndex + 2];
@@ -68,8 +81,16 @@
 
       tempCtx.putImageData(imageData, 0, 0);
 
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = finalWidth;
+      exportCanvas.height = finalHeight;
+      const ctx = exportCanvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(tempCanvas, 0, 0, finalWidth, finalHeight);
+
       const blob = await new Promise<Blob | null>((resolve) =>
-        tempCanvas.toBlob(resolve, 'image/png')
+        exportCanvas.toBlob(resolve, 'image/png')
       );
 
       if (!blob) return;
@@ -81,8 +102,8 @@
         {
           type: 'add-to-penpot',
           imageData: finalImageData,
-          width: previewWidth * 2,
-          height: previewHeight * 2,
+          width: finalWidth,
+          height: finalHeight,
           originalFill: $selection.fills[$selection.fills.length - 1],
         },
         '*'
@@ -189,68 +210,139 @@
     $selection.isPreviewLoading;
 </script>
 
-<div class="flex flex-col gap-4">
-  <div class="flex justify-between">
-    <button
-      type="button"
-      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
-      data-appearance="secondary"
-      on:click={() => {
-        $settings.rotateX = -45;
-        $settings.rotateY = 0;
-        $settings.rotateZ = -45;
-      }}
-    >
-      1
-    </button>
-    <button
-      type="button"
-      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
-      data-appearance="secondary"
-      on:click={() => {
-        $settings.rotateX = -45;
-        $settings.rotateY = 0;
-        $settings.rotateZ = 45;
-      }}
-    >
-      2
-    </button>
-    <button
-      type="button"
-      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
-      data-appearance="secondary"
-      on:click={() => {
-        $settings.rotateX = -45;
-        $settings.rotateY = 0;
-        $settings.rotateZ = 0;
-      }}
-    >
-      3
-    </button>
-    <button
-      type="button"
-      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
-      data-appearance="secondary"
-      on:click={() => {
-        $settings.rotateY = 45;
-        $settings.rotateX = 0;
-        $settings.rotateZ = 0;
-      }}
-    >
-      4
-    </button>
-    <button
-      type="button"
-      class="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm"
-      data-appearance="secondary"
-      on:click={() => {
-        $settings.rotateY = -45;
-        $settings.rotateX = 0;
-        $settings.rotateZ = 0;
-      }}
-    >
-      5
-    </button>
+<div class="flex flex-col gap-2">
+  <div class="flex flex-col mb-4">
+    <h4>Presets</h4>
+    <div class="flex justify-between">
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateX = -60;
+          $settings.rotateY = 0;
+          $settings.rotateZ = -45;
+        }}
+        use:tooltip={{
+          text: 'X: -60, Z: -45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        1
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateX = -60;
+          $settings.rotateY = 0;
+          $settings.rotateZ = 45;
+        }}
+        use:tooltip={{
+          text: 'X: -60, Z: 45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        2
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateX = -60;
+          $settings.rotateY = 0;
+          $settings.rotateZ = 0;
+        }}
+        use:tooltip={{
+          text: 'X: -60',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        3
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateY = 45;
+          $settings.rotateX = 0;
+          $settings.rotateZ = 0;
+        }}
+        use:tooltip={{
+          text: 'Y: 45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        4
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateY = -45;
+          $settings.rotateX = 0;
+          $settings.rotateZ = 0;
+        }}
+        use:tooltip={{
+          text: 'Y: -45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        5
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateY = 60;
+          $settings.rotateX = 0;
+          $settings.rotateZ = 0;
+        }}
+        use:tooltip={{
+          text: 'Y: 60',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        6
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateX = -45;
+          $settings.rotateY = 0;
+          $settings.rotateZ = 45;
+        }}
+        use:tooltip={{
+          text: 'X: -45, Z: 45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        7
+      </button>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => {
+          $settings.rotateX = -45;
+          $settings.rotateY = 0;
+          $settings.rotateZ = 0;
+        }}
+        use:tooltip={{
+          text: 'X: -45',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        8
+      </button>
+    </div>
   </div>
 
   <label class="flex flex-col">
@@ -258,29 +350,24 @@
     <div class="flex items-center">
       <input
         type="range"
-        min="-180"
-        max="180"
+        min="-85"
+        max="85"
+        step="5"
         bind:value={$settings.rotateX}
         class="w-full flex-1"
       />
-      <div class="">
-        <button
-          type="button"
-          class=""
-          data-appearance="secondary"
-          on:click={() => rotate('x', -15)}
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          class="m-2"
-          data-appearance="secondary"
-          on:click={() => rotate('x', 15)}
-        >
-          <RotateCw class="w-4 h-4" />
-        </button>
-      </div>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => ($settings.rotateX = 0)}
+        use:tooltip={{
+          text: 'Reset X',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        <RotateCcw class="w-4 h-4" />
+      </button>
     </div>
   </label>
 
@@ -289,29 +376,24 @@
     <div class="flex items-center">
       <input
         type="range"
-        min="-180"
-        max="180"
+        min="-85"
+        max="85"
+        step="5"
         bind:value={$settings.rotateY}
         class="w-full flex-1"
       />
-      <div class="">
-        <button
-          type="button"
-          class=""
-          data-appearance="secondary"
-          on:click={() => rotate('y', -15)}
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          class="m-2"
-          data-appearance="secondary"
-          on:click={() => rotate('y', 15)}
-        >
-          <RotateCw class="w-4 h-4" />
-        </button>
-      </div>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => ($settings.rotateY = 0)}
+        use:tooltip={{
+          text: 'Reset XY',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        <RotateCcw class="w-4 h-4" />
+      </button>
     </div>
   </label>
 
@@ -320,29 +402,24 @@
     <div class="flex items-center">
       <input
         type="range"
-        min="-180"
-        max="180"
+        min="-85"
+        max="85"
+        step="5"
         bind:value={$settings.rotateZ}
         class="w-full flex-1"
       />
-      <div class="">
-        <button
-          type="button"
-          class=""
-          data-appearance="secondary"
-          on:click={() => rotate('z', -15)}
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          class="m-2"
-          data-appearance="secondary"
-          on:click={() => rotate('z', 15)}
-        >
-          <RotateCw class="w-4 h-4" />
-        </button>
-      </div>
+      <button
+        type="button"
+        data-appearance="secondary"
+        on:click={() => ($settings.rotateZ = 0)}
+        use:tooltip={{
+          text: 'Reset Z',
+          position: 'bottom',
+          maxWidth: 'max-w-[60px]',
+        }}
+      >
+        <RotateCcw class="w-4 h-4" />
+      </button>
     </div>
   </label>
   <button
@@ -350,30 +427,30 @@
     data-appearance="secondary"
     on:click={handleReset}
     disabled={isDisabled}
-    class="flex-1 flex justify-center gap-2 items-center"
+    class="flex-1 flex justify-center gap-2 items-center normal-case mt-2"
     use:tooltip={{
       text: 'Reset all rotation values to 0',
       position: 'bottom',
       maxWidth: 'max-w-[300px]',
     }}
   >
-    Reset Rotation
+    Reset Rotations
   </button>
 
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 mt-3">
     <button
       on:click={handleAddNewLayer}
       disabled={isDisabled || isProcessing}
       type="button"
       data-appearance="primary"
-      class="flex-1 flex justify-center gap-2 items-center"
+      class="flex-1 flex justify-center gap-2 items-center py-2"
       use:tooltip={{
         text: 'Create a new shape with the 3D transformation',
         position: 'bottom',
         maxWidth: 'max-w-[300px]',
       }}
     >
-      Create new Shape
+      Insert to the Canvas
     </button>
   </div>
 </div>

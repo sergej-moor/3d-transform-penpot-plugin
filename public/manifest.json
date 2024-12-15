@@ -1,6 +1,6 @@
 {
-  "name": "3D Transform",
-  "description": "3D transform your iamges",
+  "name": "Planeshifter - 3D Transformations",
+  "description": "3D transform your images",
   "code": "/plugin.js",
   "icon": "/icon.png",
   "permissions": ["content:read", "content:write"]

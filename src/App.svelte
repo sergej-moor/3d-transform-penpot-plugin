@@ -15,9 +15,9 @@
 
 <main data-theme={$theme}>
   <h2
-    class=" text-center mb-2 font-GamjaFlower tracking-widest hover:tracking-[0.7rem] transition-all duration-700 font-bold"
+    class=" text-center mb-2 font-Kanit tracking-widest hover:tracking-[0.7rem] transition-all duration-700 font-bold"
   >
-    3D Transform
+    Planeshifter
   </h2>
   <div class="flex flex-col gap-4">
     <!-- Wrap Preview with its own error boundary -->

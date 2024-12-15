@@ -80,11 +80,11 @@
 </script>
 
 <!-- Debug state display -->
-<div
+<!-- <div
   class="p-2 mb-2 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono whitespace-pre"
 >
   {getDebugState($selection)}
-</div>
+</div> -->
 
 <div class="rounded-lg border border-gray-200 dark:border-gray-700">
   <div class="relative w-[300px] h-[300px] min-h-[100px]">

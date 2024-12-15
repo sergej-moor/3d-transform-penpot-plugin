@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        GamjaFlower: ['GamjaFlower', 'sans-serif'],
+        Kanit: ['Kanit', 'sans-serif'],
       },
     },
   },

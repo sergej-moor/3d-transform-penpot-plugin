@@ -12,9 +12,9 @@ import type {
 
 // Configuration
 const PLUGIN_CONFIG = {
-  name: 'Pixelize!',
+  name: 'Planeshifter - 3D Transformations',
   width: 340,
-  height: 922,
+  height: 782,
 } as const;
 
 // Plugin initialization
